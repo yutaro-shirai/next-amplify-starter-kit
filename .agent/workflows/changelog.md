@@ -9,13 +9,34 @@ description: コミット履歴からCHANGELOGを生成・更新する
 
 ## 手順
 
-### 1. 前回リリースからのコミット履歴を取得
+### 1. 比較対象を決定
+
+CHANGELOGの比較対象は以下の2つのモードがあります：
+
+#### モードA: 前回リリースからの変更（通常のリリース時）
 
 ```bash
 git log $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~50")..HEAD --pretty=format:"%h %s" --no-merges
 ```
 
 - タグがない場合は直近50コミットを表示
+
+#### モードB: フォーク元からの変更（フォーク開発時）
+
+フォークしたリポジトリで、オリジナルからの差分を記録する場合：
+
+```bash
+# upstream リモートを追加（初回のみ）
+git remote add upstream https://github.com/ORIGINAL_OWNER/ORIGINAL_REPO.git
+
+# upstream を fetch
+git fetch upstream
+
+# フォーク元からの差分を表示
+git log upstream/main..HEAD --pretty=format:"%h %s" --no-merges
+```
+
+// turbo
 
 ### 2. コミットをカテゴリ別に分類
 
@@ -38,8 +59,11 @@ git log $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~50")..HEAD --
 - 日付とバージョン番号を含むセクションを追加
 - カテゴリごとに変更をリスト化
 - 破壊的変更がある場合は `⚠️ BREAKING CHANGES` セクションを追加
+- **フォーク開発時**: フォーク元との関係を明記
 
 ### 4. フォーマット例
+
+#### 通常リリース版
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
@@ -52,6 +76,28 @@ git log $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~50")..HEAD --
 
 ### ♻️ リファクタリング
 - refactor: リファクタリング内容 (#PR番号)
+```
+
+#### フォーク開発版
+
+```markdown
+# Changelog
+
+> **Note**: このリポジトリは [ORIGINAL_OWNER/ORIGINAL_REPO](URL) からフォークされています。
+> 以下の変更はフォーク元からの差分を記載しています。
+
+## [Unreleased]
+
+### ✨ 新機能
+- feat: フォーク後に追加した機能 (commit_hash)
+
+## フォーク元との差分
+
+| 機能 | 説明 | ドキュメント |
+|-----|------|------------|
+| 機能名 | 説明 | リンク |
+
+[Unreleased]: https://github.com/YOUR_USER/YOUR_REPO/compare/upstream/main...HEAD
 ```
 
 ### 5. 変更をコミット
