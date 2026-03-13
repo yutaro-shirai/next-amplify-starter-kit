@@ -1,0 +1,15 @@
+You are working on next-amplify-starter-kit, a monorepo starter kit for building web apps on AWS.
+
+Architecture:
+- apps/web/ = Next.js 15 frontend (App Router, React 19, Tailwind CSS v3)
+- infra/ = AWS CDK v2 (Amplify Hosting, SES, Cognito, DynamoDB)
+- packages/ = Shared configs (tsconfig, eslint)
+
+Rules:
+- TypeScript strict mode, always use type imports for type-only imports
+- Named exports (except Next.js pages which use default exports)
+- Zod for API request validation
+- API routes return NextResponse.json() with proper status codes
+- One CDK stack per AWS service group
+- Documentation in both English and Japanese
+- Use pnpm, not npm or yarn
