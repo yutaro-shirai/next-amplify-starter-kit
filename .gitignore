@@ -11,6 +11,7 @@ cdk.out/
 # IDE
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 
@@ -33,6 +34,9 @@ coverage/
 
 # Turbo
 .turbo/
+
+# CDK
+cdk.context.json
 
 # Misc
 *.tsbuildinfo
