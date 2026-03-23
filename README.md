@@ -2,15 +2,72 @@
 
 [日本語 (Japanese)](README.ja.md)
 
-[![CI](https://github.com/i-Willink-Inc/next-amplify-starter-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/i-Willink-Inc/next-amplify-starter-kit/actions/workflows/ci.yml)
+[![CI](https://github.com/i-Willink-LLC/next-amplify-starter-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/i-Willink-LLC/next-amplify-starter-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.17-brightgreen)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-%3E%3D8.0-orange)](https://pnpm.io/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 A starter kit aggregating modern web development best practices. Features a monorepo structure with Next.js + AWS Amplify + CDK to launch web sites fastest and provide a scalable foundation.
 
 ---
 
+## Why This Kit?
+
+Most Next.js starters give you a frontend scaffold and stop there. This kit is different:
+
+- **AWS-native from day one** -- Amplify hosting, CDK infrastructure, and GitHub Actions CI/CD are wired together out of the box. You deploy to production on day one, not day thirty.
+- **Production-ready IaC, not a toy** -- The `infra/` directory contains real AWS CDK stacks, not CloudFormation snippets you have to glue together yourself.
+- **Monorepo done right** -- Turborepo orchestrates builds across apps, packages, and infrastructure with shared configs for TypeScript, ESLint, and Prettier.
+- **Opinionated where it matters, flexible where it doesn't** -- Auth patterns, email integration, and CI/CD are pre-configured, but you own every line of code.
+
+---
+
+## Architecture
+
+```
+                         +------------------+
+                         |   Developer PC   |
+                         |  (pnpm dev)      |
+                         +--------+---------+
+                                  |
+                          git push / merge
+                                  |
+                    +-------------v--------------+
+                    |     GitHub Actions CI/CD    |
+                    |  (lint, test, cdk deploy)   |
+                    +-------------+--------------+
+                                  |
+                    +-------------v--------------+
+                    |        AWS CDK Stacks       |
+                    |  (infra/ -- TypeScript)      |
+                    +---+----------+----------+---+
+                        |          |          |
+               +--------v--+  +---v----+  +--v---------+
+               |  Amplify   |  |  SES   |  |  Secrets   |
+               |  Hosting   |  | (Email)|  |  Manager   |
+               | (Next.js)  |  |        |  | (Tokens)   |
+               +------------+  +--------+  +------------+
+```
+
+---
+
+## What's Included
+
+- **Frontend**: Next.js 15 with App Router, React 19, Tailwind CSS, TypeScript
+- **Infrastructure**: AWS CDK stacks for Amplify hosting, fully typed in TypeScript
+- **CI/CD**: GitHub Actions pipeline for lint, test, build, and CDK deploy
+- **Dev Environment**: Devcontainer config for consistent, one-click setup
+- **Shared Configs**: Centralized ESLint, TypeScript, and Prettier configurations
+- **Monorepo Tooling**: Turborepo with pnpm workspaces for fast, cached builds
+
+---
+
 ## 📋 Table of Contents
 
+- [Why This Kit?](#why-this-kit)
+- [Architecture](#architecture)
+- [What's Included](#whats-included)
 - [Features](#-features)
 - [Project Structure](#-project-structure)
 - [Quick Start](#-quick-start)
@@ -67,7 +124,7 @@ next-amplify-starter-kit/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/i-Willink-Inc/next-amplify-starter-kit.git
+git clone https://github.com/i-Willink-LLC/next-amplify-starter-kit.git
 cd next-amplify-starter-kit
 ```
 
