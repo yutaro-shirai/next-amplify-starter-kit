@@ -6,6 +6,7 @@ dotenv.config();
 
 import * as cdk from 'aws-cdk-lib';
 import { AmplifyStack } from '../lib/amplify-stack';
+import { AuthStack } from '../lib/auth-stack';
 import { SesStack } from '../lib/ses-stack';
 
 const app = new cdk.App();
@@ -31,6 +32,21 @@ new AmplifyStack(app, stackName, {
     },
     description: 'Next.js Amplify Starter Kit - Hosting Infrastructure',
 });
+
+// Auth Stack (optional - only deployed if COGNITO_ENABLED=true)
+// Creates a Cognito User Pool for email-based authentication.
+// After deployment, copy the outputs into your frontend .env.local:
+//   NEXT_PUBLIC_COGNITO_USER_POOL_ID=<UserPoolId>
+//   NEXT_PUBLIC_COGNITO_CLIENT_ID=<UserPoolClientId>
+if (process.env.COGNITO_ENABLED === 'true') {
+    new AuthStack(app, 'AuthStack', {
+        env: {
+            account: process.env.CDK_DEFAULT_ACCOUNT,
+            region: process.env.CDK_DEFAULT_REGION || 'ap-northeast-1',
+        },
+        description: 'Next.js Amplify Starter Kit - Cognito Auth Infrastructure',
+    });
+}
 
 // SES Stack (optional - only deployed if SES_FROM_EMAIL or SES_DOMAIN is configured)
 if (process.env.SES_FROM_EMAIL || process.env.SES_DOMAIN) {

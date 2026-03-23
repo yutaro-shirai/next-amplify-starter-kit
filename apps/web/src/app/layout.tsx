@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthProviderWrapper } from './auth-provider-wrapper';
 
 export const metadata: Metadata = {
     title: 'Next.js Amplify Starter Kit',
@@ -18,8 +19,10 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="ja">
-            <body className="antialiased">{children}</body>
+        <html lang="en">
+            <body className="antialiased">
+                <AuthProviderWrapper>{children}</AuthProviderWrapper>
+            </body>
         </html>
     );
 }

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.700.0",
+    "amazon-cognito-identity-js": "^6.3.16",
     "next": "^16.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

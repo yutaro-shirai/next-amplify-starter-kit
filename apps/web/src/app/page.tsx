@@ -1,6 +1,24 @@
+import Link from 'next/link';
+
 export default function Home() {
     return (
         <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+            {/* Navigation Links */}
+            <nav className="absolute top-0 right-0 p-6 flex gap-4">
+                <Link
+                    href="/auth/login"
+                    className="px-4 py-2 text-gray-300 hover:text-white transition-colors text-sm font-medium"
+                >
+                    Sign In
+                </Link>
+                <Link
+                    href="/dashboard"
+                    className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors text-sm font-medium"
+                >
+                    Dashboard
+                </Link>
+            </nav>
+
             <div className="text-center space-y-8">
                 <h1 className="text-5xl font-bold text-white tracking-tight">
                     Next.js Amplify
@@ -34,19 +52,19 @@ export default function Home() {
 
                 <div className="pt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-4xl">
                     <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-                        <h2 className="text-lg font-semibold text-white mb-2">🚀 Turborepo</h2>
+                        <h2 className="text-lg font-semibold text-white mb-2">Turborepo</h2>
                         <p className="text-gray-400 text-sm">
                             High-performance build system with intelligent caching.
                         </p>
                     </div>
                     <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-                        <h2 className="text-lg font-semibold text-white mb-2">☁️ AWS CDK</h2>
+                        <h2 className="text-lg font-semibold text-white mb-2">AWS CDK</h2>
                         <p className="text-gray-400 text-sm">
                             Infrastructure as Code for reproducible deployments.
                         </p>
                     </div>
                     <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-                        <h2 className="text-lg font-semibold text-white mb-2">⚡ Amplify</h2>
+                        <h2 className="text-lg font-semibold text-white mb-2">Amplify</h2>
                         <p className="text-gray-400 text-sm">
                             Seamless CI/CD and hosting for your Next.js app.
                         </p>
