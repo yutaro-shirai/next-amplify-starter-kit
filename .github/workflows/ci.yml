@@ -5,24 +5,161 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - apps
+          - infra
+
+permissions:
+  contents: read
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.filter.outputs.apps }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect Changes
+        id: filter
+        env:
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          # Handle Workflow Dispatch (Manual Execution)
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TARGET="${{ inputs.target }}"
+            echo "Manual trigger detected. Target: $TARGET"
+            
+            if [ "$TARGET" == "all" ]; then
+              echo "apps=true" >> $GITHUB_OUTPUT
+              echo "infra=true" >> $GITHUB_OUTPUT
+            elif [ "$TARGET" == "apps" ]; then
+              echo "apps=true" >> $GITHUB_OUTPUT
+              echo "infra=false" >> $GITHUB_OUTPUT
+            elif [ "$TARGET" == "infra" ]; then
+              echo "apps=false" >> $GITHUB_OUTPUT
+              echo "infra=true" >> $GITHUB_OUTPUT
+            fi
+            exit 0 # Skip git diff logic
+          fi
+
+          # Handle Push/PR (Auto Detection)
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA="origin/${{ github.base_ref }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+          
+          # Check if base commit exists (for force push cases etc.)
+          if ! git cat-file -e $BASE_SHA; then
+            echo "Base SHA $BASE_SHA not found, checking against previous commit"
+            BASE_SHA="HEAD^"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA)
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          if echo "$CHANGED_FILES" | grep -qE '^apps/|^packages/|^package.json|^pnpm-lock.yaml'; then
+            echo "apps=true" >> $GITHUB_OUTPUT
+          else
+            echo "apps=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '^infra/|^amplify.yml'; then
+            echo "infra=true" >> $GITHUB_OUTPUT
+          else
+            echo "infra=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Environment Variables
+        env:
+          # Basic Config
+          REPO_NAME: ${{ secrets.REPO_NAME }}
+          AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
+          # Deploy Config (Required for main branch)
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+        run: |
+          APPS_CHANGED="${{ steps.filter.outputs.apps }}"
+          INFRA_CHANGED="${{ steps.filter.outputs.infra }}"
+          IS_MAIN="${{ github.ref == 'refs/heads/main' }}"
+          # Check if this is a PR from a fork
+          IS_FORK="false"
+          if [ "${{ github.event_name }}" == "pull_request" ] && [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            IS_FORK="true"
+          fi
+          
+          if [ "$APPS_CHANGED" == "true" ] || [ "$INFRA_CHANGED" == "true" ]; then
+            MISSING_VARS=""
+            MISSING_OPTIONAL_VARS=""
+            
+            # Check Required Variables
+            # For Fork PRs, we skip strict check to allow CI to pass with dummy values later
+            if [ "$IS_FORK" == "false" ]; then
+              if [ -z "$REPO_NAME" ]; then MISSING_VARS="${MISSING_VARS:+$MISSING_VARS, }REPO_NAME"; fi
+              if [ -z "$AMPLIFY_APP_NAME" ]; then MISSING_VARS="${MISSING_VARS:+$MISSING_VARS, }AMPLIFY_APP_NAME"; fi
+            else
+              echo "::warning::Running from Fork. Skipping strict environment variable checks."
+            fi
+            
+            # Required for deployment (main branch only)
+            if [ "$IS_MAIN" == "true" ]; then
+              if [ -z "$AWS_ACCESS_KEY_ID" ]; then MISSING_VARS="${MISSING_VARS:+$MISSING_VARS, }AWS_ACCESS_KEY_ID"; fi
+              if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then MISSING_VARS="${MISSING_VARS:+$MISSING_VARS, }AWS_SECRET_ACCESS_KEY"; fi
+              if [ -z "$GH_PAT" ]; then MISSING_VARS="${MISSING_VARS:+$MISSING_VARS, }GH_PAT"; fi
+              
+              # Optional Variables (Warning only)
+              if [ -z "$DOMAIN_NAME" ]; then MISSING_OPTIONAL_VARS="${MISSING_OPTIONAL_VARS:+$MISSING_OPTIONAL_VARS, }DOMAIN_NAME"; fi
+            fi
+            
+            if [ ! -z "$MISSING_OPTIONAL_VARS" ]; then
+              echo "::warning::Missing optional environment variables: $MISSING_OPTIONAL_VARS"
+              echo "Some features (e.g. custom domain) may not work without these variables."
+            fi
+
+            if [ ! -z "$MISSING_VARS" ]; then
+              echo "::error::Missing required environment variables: $MISSING_VARS"
+              echo "Please set these variables in GitHub Secrets."
+              exit 1
+            fi
+          fi
+
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: ${{ needs.changes.outputs.apps == 'true' || needs.changes.outputs.infra == 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'pnpm'
@@ -40,15 +177,16 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: lint
+    if: ${{ needs.changes.outputs.apps == 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'pnpm'
@@ -63,15 +201,16 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: lint
+    if: ${{ needs.changes.outputs.apps == 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'pnpm'
@@ -83,9 +222,126 @@ jobs:
         run: pnpm build
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-output
           path: |
             apps/web/.next
           retention-days: 7
+
+  cdk-check:
+    name: CDK Check
+    runs-on: ubuntu-latest
+    needs: lint
+    if: ${{ needs.changes.outputs.infra == 'true' }}
+    env:
+      REPO_NAME: ${{ secrets.REPO_NAME || 'check-repo' }}
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME || 'check-app' }}
+      CDK_DEFAULT_ACCOUNT: '123456789012'
+      CDK_DEFAULT_REGION: 'ap-northeast-1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: CDK Synth
+        working-directory: infra
+        run: npx cdk synth
+
+  deploy-infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: cdk-check
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.infra == 'true'
+    env:
+      USE_SECRETS_MANAGER: 'false'
+      GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      REPO_NAME: ${{ secrets.REPO_NAME }}
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        id: creds
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - name: CDK Deploy
+        working-directory: infra
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ steps.creds.outputs.aws-account-id }}
+          CDK_DEFAULT_REGION: 'ap-northeast-1'
+        run: pnpm cdk deploy --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Upload CDK Outputs
+        uses: actions/upload-artifact@v6
+        with:
+          name: cdk-outputs
+          path: infra/cdk-outputs.json
+          retention-days: 7
+
+  deploy-app:
+    name: Trigger Amplify Build
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.apps == 'true'
+    env:
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-northeast-1
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get App ID
+        id: get-app-id
+        run: |
+          if [ -z "$AMPLIFY_APP_NAME" ]; then
+            echo "AMPLIFY_APP_NAME is not set. Skipping."
+            exit 0
+          fi
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+          echo "app_id=$APP_ID" >> $GITHUB_OUTPUT
+      
+      - name: Trigger Amplify Build
+        env:
+          AMPLIFY_APP_ID: ${{ steps.get-app-id.outputs.app_id }}
+        run: |
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "App ID not found. Skipping build trigger."
+            exit 0
+          fi
+          aws amplify start-job --app-id $AMPLIFY_APP_ID --branch-name main --job-type RELEASE

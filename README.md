@@ -1,57 +1,56 @@
 # Next.js Amplify Starter Kit
 
+[日本語 (Japanese)](README.ja.md)
+
 [![CI](https://github.com/i-Willink-Inc/next-amplify-starter-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/i-Willink-Inc/next-amplify-starter-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[日本語](README.ja.md)
-
-A production-ready monorepo starter kit for building and deploying web applications with **Next.js 15**, **AWS Amplify**, and **AWS CDK**. Ship fast, scale confidently.
+A production-ready monorepo starter kit for building and deploying web applications with **Next.js 16**, **AWS Amplify**, and **AWS CDK**. Ship fast, scale confidently.
 
 ## Why This Kit?
 
 - **Zero-config monorepo** — Turborepo + pnpm workspace, pre-configured and ready to go
 - **Infrastructure as Code** — AWS CDK stacks for Amplify Hosting and SES email, deploy with one command
-- **Modern stack** — Next.js 15 (App Router), React 19, TypeScript 5.7, Tailwind CSS
+- **Modern stack** — Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4
 - **CI/CD included** — GitHub Actions for lint, build, test, and CDK deployment
 - **AI-friendly** — Ships with `CLAUDE.md` for Claude Code / AI-assisted development
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 15 (App Router + React 19) |
-| Styling | Tailwind CSS 3.4 |
-| Language | TypeScript 5.7 |
-| Infrastructure | AWS CDK 2.x |
-| Hosting | AWS Amplify Hosting |
-| Email | AWS SES |
-| Monorepo | Turborepo + pnpm |
-| CI/CD | GitHub Actions |
-| Dev Environment | Devcontainer (VS Code) |
+| Technology | Description |
+|------------|-------------|
+| **Turborepo** | High-performance build system and monorepo management |
+| **Next.js 16** | App Router + React 19 + SSR support |
+| **AWS CDK** | Infrastructure as Code for reproducibility |
+| **AWS SES** | Email delivery (contact form) |
+| **Tailwind CSS 4** | Utility-first styling |
+| **GitHub Actions** | Complete CI/CD pipeline |
+| **pnpm** | Fast and efficient package management |
+| **Devcontainer** | Consistent development environment |
 
 ## Project Structure
 
 ```
 next-amplify-starter-kit/
 ├── apps/
-│   └── web/                 # Next.js application
+│   └── web/                 # Next.js Application
 ├── packages/
-│   ├── tsconfig/            # Shared TypeScript config
-│   └── eslint-config/       # Shared ESLint config
-├── infra/                   # AWS CDK infrastructure
+│   ├── tsconfig/            # Shared TypeScript Config
+│   └── eslint-config/       # Shared ESLint Config
+├── infra/                   # AWS CDK Infrastructure Code
 ├── docs/                    # Documentation
-│   ├── 00_project/          # Project management
-│   ├── 20_development/      # Development guides
-│   └── 30_operations/       # Operations guides
-└── .github/workflows/       # CI/CD pipelines
+│   ├── 00_project/          # Project Management
+│   ├── 20_development/      # Development Guide
+│   └── 30_operations/       # Operations Guide
+└── .github/workflows/       # CI/CD Definitions
 ```
 
 ## Quick Start
 
 ### Prerequisites
 
-| Tool | Minimum | Recommended |
-|------|---------|-------------|
+| Tool | Minimum Version | Recommended |
+|------|-----------------|-------------|
 | Node.js | 18.17.0 | 20.x LTS |
 | pnpm | 8.0.0 | 9.x+ |
 | Docker | — | Latest (for Devcontainer) |
@@ -85,13 +84,17 @@ See [Devcontainer Guide](docs/20_development/devcontainer-guide.md) for details.
 ### Deployment Flow
 
 ```
-Step 1: CDK Deploy (local or GitHub Actions)
-         → Creates Amplify service on AWS
-         → Connects to GitHub repository
-
-Step 2: Merge to main branch
-         → Amplify auto-detects changes
-         → Builds and deploys via amplify.yml
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 1: CDK Deploy (Local or GitHub Actions)                   │
+│          → Create Amplify service on AWS                        │
+│          → Set up GitHub repository connection                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 2: Merge to main branch                                   │
+│          → Amplify automatically detects changes                │
+│          → Build and deploy according to amplify.yml            │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Option A: Local Deploy (recommended for first setup)

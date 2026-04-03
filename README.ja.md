@@ -1,5 +1,7 @@
 # Next.js Amplify Starter Kit
 
+[English](README.md)
+
 [![CI](https://github.com/i-Willink-Inc/next-amplify-starter-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/i-Willink-Inc/next-amplify-starter-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -197,7 +199,6 @@ npx cdk deploy
 
 | ドキュメント | 対象者 | 説明 |
 |------------|-------|------|
-| [プロジェクト計画書](docs/00_project/PROJECT_PLAN.md) | 全員 | プロジェクトの概要と計画 |
 | [ドキュメント管理ルール](docs/00_project/DOCUMENT_RULES.md) | 開発者 | ドキュメントの書き方 |
 | [開発環境セットアップ](docs/20_development/getting-started.md) | 開発者 | 開発環境の構築手順 |
 | [Devcontainer 利用ガイド](docs/20_development/devcontainer-guide.md) | 開発者 | Docker開発環境の利用方法 |

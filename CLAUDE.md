@@ -4,13 +4,13 @@ This file provides context for Claude Code and other AI-assisted development too
 
 ## Project Overview
 
-A production-ready monorepo starter kit: **Next.js 15 + AWS Amplify + CDK**. Designed for rapid deployment of web applications with infrastructure as code.
+A production-ready monorepo starter kit: **Next.js 16 + AWS Amplify + CDK**. Designed for rapid deployment of web applications with infrastructure as code.
 
 ## Architecture
 
 ```
 Monorepo (Turborepo + pnpm)
-├── apps/web          → Next.js 15 (App Router, React 19, Tailwind CSS)
+├── apps/web          → Next.js 16 (App Router, React 19, Tailwind CSS 4)
 ├── packages/tsconfig → Shared TypeScript config
 ├── packages/eslint-config → Shared ESLint config
 └── infra/            → AWS CDK (AmplifyStack + SesStack)
